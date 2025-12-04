@@ -1,390 +1,323 @@
-# Experiment 5: Subqueries and Views
+# Experiment 4: Aggregate Functions, Group By and Having Clause
 
 ## AIM
-To study and implement subqueries and views.
+To study and implement aggregate functions, GROUP BY, and HAVING clause with suitable examples.
 
 ## THEORY
 
-### Subqueries
-A subquery is a query inside another SQL query and is embedded in:
-- WHERE clause
-- HAVING clause
-- FROM clause
+### Aggregate Functions
+These perform calculations on a set of values and return a single value.
 
-**Types:**
-- **Single-row subquery**:
-  Sub queries can also return more than one value. Such results should be made use along with the operators in and any.
-- **Multiple-row subquery**:
-  Here more than one subquery is used. These multiple sub queries are combined by means of ‘and’ & ‘or’ keywords.
-- **Correlated subquery**:
-  A subquery is evaluated once for the entire parent statement whereas a correlated Sub query is evaluated once per row processed by the parent statement.
+- **MIN()** – Smallest value  
+- **MAX()** – Largest value  
+- **COUNT()** – Number of rows  
+- **SUM()** – Total of values  
+- **AVG()** – Average of values
 
-**Example:**
+**Syntax:**
 ```sql
-SELECT * FROM employees
-WHERE salary > (SELECT AVG(salary) FROM employees);
+SELECT AGG_FUNC(column_name) FROM table_name WHERE condition;
 ```
-### Views
-A view is a virtual table based on the result of an SQL SELECT query.
-**Create View:**
+### GROUP BY
+Groups records with the same values in specified columns.
+**Syntax:**
 ```sql
-CREATE VIEW view_name AS
-SELECT column1, column2 FROM table_name WHERE condition;
+SELECT column_name, AGG_FUNC(column_name)
+FROM table_name
+GROUP BY column_name;
 ```
-**Drop View:**
+### HAVING
+Filters the grouped records based on aggregate conditions.
+**Syntax:**
 ```sql
-DROP VIEW view_name;
+SELECT column_name, AGG_FUNC(column_name)
+FROM table_name
+GROUP BY column_name
+HAVING condition;
 ```
 
 **Question 1**
 --
-From the following tables write a SQL query to find salespeople who had more than one customer. Return salesman_id and name.
+How many patients have insurance coverage valid in each year?
 
-salesman table
+Sample table:Insurance Table
 
-name                 type
----------------   ---------------
-salesman_id       numeric(5)
-name                  varchar(30)
-city                     varchar(15)
-commission       decimal(5,2)
-
-customer table
-
-name              type
------------       ----------
-customer_id   int
-cust_name     text
-city                text
-grade            int
-salesman_id  int
+name               type
+-----------------  ----------
+InsuranceID        INTEGER
+PatientID          INTEGER
+InsuranceCompany   TEXT
+PolicyNumber       TEXT
+PolicyHolder       TEXT
+ValidityPeriod     TEXT
 -- 
 
 ```sql
-SELECT s.salesman_id, s.name
-FROM salesman s
-JOIN customer c
-  ON s.salesman_id = c.salesman_id
-GROUP BY s.salesman_id, s.name
-HAVING COUNT(c.customer_id) > 1;
-
+SELECT
+    SUBSTR(ValidityPeriod,1,4) AS ValidityYear,
+    COUNT(DISTINCT PatientID) AS TotalPatients
+FROM
+    Insurance
+GROUP BY
+    ValidityYear;
 ```
 
 **Output:**
 
-<img width="1367" height="471" alt="image" src="https://github.com/user-attachments/assets/5a538e04-6255-4bc5-b29f-b71df234a983" />
+<img width="780" height="371" alt="image" src="https://github.com/user-attachments/assets/475d13d4-2554-43e3-82f7-6b9338f2e5c2" />
+
 
 **Question 2**
 ---
-Write a SQL query to Find employees who have an age less than the average age of employees with incomes over 1 million
+How many doctors specialize in each medical specialty?
 
-Employee Table
+Sample table:Doctors Table
 
-name             type
+<img width="1039" height="162" alt="image" src="https://github.com/user-attachments/assets/de6b9998-5d24-40e0-8be4-139334f872c6" />
 
-------------   ---------------
-
-id                    INTEGER
-
-name              TEXT
-
-age                 INTEGER
-
-city                 TEXT
-
-income           INTEGER
 -- 
 
 ```sql
-SELECT *
-FROM Employee
-WHERE age < (
-    SELECT AVG(age)
-    FROM Employee
-    WHERE income > 1000000
-);
-
+SELECT Specialty,COUNT(DoctorID) AS TotalDocto
+FROM Doctors
+GROUP BY Specialty;
 ```
 
 **Output:**
 
-<img width="1416" height="432" alt="image" src="https://github.com/user-attachments/assets/cdf6b836-434e-4d69-9cfc-2a496eab867d" />
-
+<img width="598" height="633" alt="image" src="https://github.com/user-attachments/assets/e948656e-51a7-47b4-8fad-5768dbafca01" />
 
 
 **Question 3**
 ---
-Write a SQL query that retrieves the names of students and their corresponding grades, where the grade is equal to the minimum grade achieved in each subject.
+How many medical records were created in each month?
 
-Sample table: GRADES (attributes: student_id, student_name, subject, grade)
-
-<img width="602" height="233" alt="image" src="https://github.com/user-attachments/assets/94b36cf7-608c-4388-8c1d-0e82038ced46" />
-
+Sample table:MedicalRecords Table
+<img width="1089" height="164" alt="image" src="https://github.com/user-attachments/assets/f355ca55-e03d-48db-9730-1a233fea36f8" />
 
 --
 
 ```sql
-SELECT student_name, grade
-FROM GRADES
-WHERE (subject, grade) IN (
-    SELECT subject, MIN(grade)
-    FROM GRADES
-    GROUP BY subject
-);
-
+SELECT
+    strftime('%Y-%m',Date) AS Month, 
+    COUNT(*) AS TotalRecords
+FROM 
+    MedicalRecords
+GROUP BY 
+    Month;
 ```
 
 **Output:**
 
-<img width="1053" height="443" alt="image" src="https://github.com/user-attachments/assets/576db8e7-6f9b-468a-bcf8-144ae3fdf04c" />
+<img width="652" height="443" alt="image" src="https://github.com/user-attachments/assets/544f99d2-921a-4afc-84d8-d1e3dbe8c420" />
 
 
 **Question 4**
 ---
-Write a SQL query to retrieve all columns from the CUSTOMERS table for customers whose salary is LESS than $2500.
+Write a SQL query to find how many employees have an income greater than 50K?
 
-Sample table: CUSTOMERS
+Table: employee
 
-ID          NAME        AGE         ADDRESS     SALARY
-----------  ----------  ----------  ----------  ----------
-
-1          Ramesh     32              Ahmedabad     2000
-2          Khilan        25              Delhi                 1500
-3          Kaushik      23              Kota                  2000
-4          Chaitali       25             Mumbai            6500
-5          Hardik        27              Bhopal              8500
-6          Komal         22              Hyderabad       4500
-
-7           Muffy          24              Indore            10000
---
+name        type
+----------  ----------
+id          INTEGER
+name        TEXT
+age         INTEGER
+city        TEXT
+income      INTEGER
+-- 
 
 ```sql
-SELECT *
-FROM CUSTOMERS
-WHERE SALARY < 2500;
-
+SELECT COUNT(*) AS employees_count
+FROM employee
+WHERE income>50000;
 ```
 
 **Output:**
-<img width="1213" height="465" alt="image" src="https://github.com/user-attachments/assets/172e0e36-ff84-49eb-9a0d-1c4fc103556a" />
 
+<img width="452" height="342" alt="image" src="https://github.com/user-attachments/assets/9b0efad6-46a9-49ed-a80f-4e195e7abdc4" />
 
 
 **Question 5**
 ---
-From the following tables, write a SQL query to find all orders generated by the salespeople who may work for customers whose id is 3007. Return ord_no, purch_amt, ord_date, customer_id, salesman_id.
+Write a SQL query to find the Fruit with the lowest available quantity.
 
-Table Name: orders
+Note: Inventory attribute contains amount of fruits
 
-name             type
----------------  --------
-order_no         int
-purch_amt        real
-order_date       text
-customer_id      int
-salesman_id      int
+Table: fruits
+
+name        type
+----------  ----------
+id          INTEGER
+name        TEXT
+unit        TEXT
+inventory   INTEGER
+price       REAL
 -- 
 
 ```sql
-SELECT
-    ord_no,
-    purch_amt,
-    ord_date,
-    customer_id,
-    salesman_id
-FROM
-    orders
-WHERE
-    salesman_id IN (
-        SELECT DISTINCT
-            salesman_id
-        FROM
-            orders
-        WHERE
-            customer_id = 3007
-    );
+SELECT name AS fruit_name,inventory AS lowest_quantity
+FROM fruits
+ORDER BY inventory ASC
+LIMIT 1;
 ```
 
 **Output:**
 
-<img width="1353" height="478" alt="image" src="https://github.com/user-attachments/assets/9a6918d8-34a2-46a8-8ed9-709852e76958" />
+<img width="700" height="313" alt="image" src="https://github.com/user-attachments/assets/7f56ffce-8b47-4828-8173-383d63cd7037" />
 
 
 **Question 6**
 ---
-From the following tables write a SQL query to find all orders generated by London-based salespeople. Return ord_no, purch_amt, ord_date, customer_id, salesman_id.
+Write a SQL query to find Who has the highest income among employee living in California?
 
-salesman table
+Table: employee
 
-name             type
----------------  ---------------
-salesman_id      numeric(5)
-name                 varchar(30)
-city                    varchar(15)
-commission       decimal(5,2)
-
-orders table
-
-name             type
----------------  --------
-order_no         int
-purch_amt        real
-order_date       text
-customer_id      int
-salesman_id      int
+name        type
+----------  ----------
+id          INTEGER
+name        TEXT
+age         INTEGER
+city        TEXT
+income      INTEGER
 -- 
 
 ```sql
-SELECT
-    A.ord_no,
-    A.purch_amt,
-    A.ord_date,
-    A.customer_id,
-    A.salesman_id
-FROM
-    orders A
-JOIN
-    salesman B
-ON
-    A.salesman_id = B.salesman_id
-WHERE
-    B.city = 'London';
+SELECT name,max(income)
+FROM employee
+WHERE city='California'
+ORDER BY income DESC
+LIMIT 1;
 ```
 
 **Output:**
 
-<img width="1252" height="412" alt="image" src="https://github.com/user-attachments/assets/329dee1b-56a2-4f77-80ff-032a6b030472" />
-
+<img width="542" height="323" alt="image" src="https://github.com/user-attachments/assets/323e36a2-5df8-40d6-b8de-08cdba2de5ef" />
 
 
 **Question 7**
 ---
-Write a SQL query that retrieves the names of students and their corresponding grades, where the grade is equal to the maximum grade achieved in each subject.
+Write a SQL query to find the number of employees whose age is greater than 32.
 
-Sample table: GRADES (attributes: student_id, student_name, subject, grade)
-<img width="602" height="233" alt="image" src="https://github.com/user-attachments/assets/e4563f3c-b0ab-4d09-8be4-506748a2a550" />
+Sample table: employee
+
+id
+
+name
+
+age
+
+address
+
+salary
+
+1
+
+Paul
+
+32
+
+California
+
+20000
+
+4
+
+Mark
+
+25
+
+Richtown
+
+65000
+
+5
+
+David
+
+27
+
+Texas
+
+85000
 
 
 -- 
 
 ```sql
-SELECT student_name, grade
-FROM GRADES
-WHERE (subject, grade) IN (
-    SELECT subject, MAX(grade)
-    FROM GRADES
-    GROUP BY subject
-);
+SELECT COUNT(*) AS COUNT
+FROM employee
+WHERE age>32;
 ```
 
 **Output:**
 
-<img width="853" height="381" alt="image" src="https://github.com/user-attachments/assets/4fd04424-fbdf-4415-9c07-b175b00a5f2c" />
-
+<img width="487" height="352" alt="image" src="https://github.com/user-attachments/assets/806f3863-7a6d-4793-9d4f-32ba9a234c49" />
 
 
 **Question 8**
 ---
-From the following tables, write a SQL query to find those salespeople who earned the maximum commission. Return ord_no, purch_amt, ord_date, and salesman_id.
+Write the SQL query that achieves the grouping of data by age intervals using the expression (age/5)5, calculates the total salary sum for each group, and excludes groups where the total salary sum is not greater than 5000.
 
-salesman table
-
-name             type
----------------  ---------------
-salesman_id      numeric(5)
-name                 varchar(30)
-city                    varchar(15)
-commission       decimal(5,2)
-
-orders table
-
-name             type
----------------  --------
-order_no         int
-purch_amt        real
-order_date       text
-customer_id      int
-salesman_id      int
--- 
-
-```sql
-SELECT
-    T1.ord_no,
-    T1.purch_amt,
-    T1.ord_date,
-    T1.salesman_id
-FROM
-    orders T1
-INNER JOIN
-    salesman T2
-ON
-    T1.salesman_id = T2.salesman_id
-WHERE
-    T2.commission = (
-        SELECT
-            MAX(commission)
-        FROM
-            salesman
-    );
-```
-
-**Output:**
-
-<img width="987" height="488" alt="image" src="https://github.com/user-attachments/assets/89e864ca-d812-4c4f-869f-61cfc0e6ebb4" />
-
-
-**Question 9**
----
-Write a SQL query to List departments with names longer than the average length
-
-Departments Table (attributes: department_id, department_name)
-<img width="866" height="134" alt="image" src="https://github.com/user-attachments/assets/78c02083-22e6-4d01-bfe6-3a0810d81b3f" />
-
+Sample table: customer1
+<img width="992" height="173" alt="image" src="https://github.com/user-attachments/assets/a48ca025-2516-4f55-b9b8-8f1da0c6a5c9" />
 
 --
 
 ```sql
-SELECT department_id, department_name
-FROM Departments
-WHERE LENGTH(department_name) > (
-    SELECT AVG(LENGTH(department_name))
-    FROM Departments
-);
-
+SELECT (age/5)*5 AS age_group,SUM(salary)
+FROM customer1
+GROUP BY (age/5)*5
+HAVING SUM(salary)>5000;
 ```
 
 **Output:**
 
-<img width="660" height="417" alt="image" src="https://github.com/user-attachments/assets/07e81876-1dfe-4240-9ce3-c9674181b6c7" />
+<img width="651" height="378" alt="image" src="https://github.com/user-attachments/assets/6dfa9627-ad49-4062-a770-817a725f9e6b" />
 
 
-**Question 10**
+**Question 9**
 ---
-Write a SQL query that retrieve all the columns from the table "Grades", where the grade is equal to the maximum grade achieved in each subject.
+Write the SQL query that achieves the grouping of data by city, calculates the average income for each city, and includes only those cities where the average income is greater than 500,000.
 
-Sample table: GRADES (attributes: student_id, student_name, subject, grade)
-<img width="602" height="233" alt="image" src="https://github.com/user-attachments/assets/5057fefd-6f55-494e-801a-f81eb6f6417b" />
-
+Sample table: employee
+<img width="1011" height="215" alt="image" src="https://github.com/user-attachments/assets/70967c08-f58f-4621-9d57-303b47eea1c4" />
 
 -- 
 
 ```sql
-SELECT student_id, student_name, subject, grade
-FROM GRADES
-WHERE (subject, grade) IN (
-    SELECT subject, MAX(grade)
-    FROM GRADES
-    GROUP BY subject
-);
+SELECT city,AVG(income) AS 'AVG(income)'
+FROM employee
+GROUP BY city
+HAVING AVG(income)>500000;
 ```
 
 **Output:**
 
-<img width="1331" height="460" alt="image" src="https://github.com/user-attachments/assets/b2321cf2-0bad-4427-a207-dd4799cd3d51" />
+<img width="588" height="466" alt="image" src="https://github.com/user-attachments/assets/70e704f0-3852-44be-adc8-3941ff4cb559" />
 
 
-<img width="1502" height="282" alt="image" src="https://github.com/user-attachments/assets/30ce6e34-b24f-44b9-a0a5-37d6101ea2ad" />
+**Question 10**
+---
+Which cities (addresses) in the "customer1" table have an average salary lesser than Rs. 15000
 
+Sample table: customer1
+<img width="992" height="173" alt="image" src="https://github.com/user-attachments/assets/8beab414-e9d5-453a-8834-6be6a13ae91c" />
+
+-- 
+
+```sql
+SELECT address,AVG(salary)
+FROM customer1
+GROUP BY address
+HAVING AVG(salary)<15000;
+```
+
+**Output:**
+<img width="618" height="652" alt="image" src="https://github.com/user-attachments/assets/9b7a9ee8-271d-458b-84a0-f34a1bff7d85" />
+
+
+<img width="1473" height="251" alt="image" src="https://github.com/user-attachments/assets/f7126c09-e731-467f-bbb6-8c8e42be9bbe" />
 
 ## RESULT
-Thus, the SQL queries to implement subqueries and views have been executed successfully.
+Thus, the SQL queries to implement aggregate functions, GROUP BY, and HAVING clause have been executed successfully.
